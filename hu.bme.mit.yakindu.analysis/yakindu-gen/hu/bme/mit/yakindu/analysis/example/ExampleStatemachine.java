@@ -18,6 +18,18 @@ public class ExampleStatemachine implements IExampleStatemachine {
 			white = true;
 		}
 		
+		private boolean blue;
+		
+		public void raiseBlue() {
+			blue = true;
+		}
+		
+		private boolean purple;
+		
+		public void raisePurple() {
+			purple = true;
+		}
+		
 		private boolean black;
 		
 		public void raiseBlack() {
@@ -44,9 +56,21 @@ public class ExampleStatemachine implements IExampleStatemachine {
 			this.blackTime = value;
 		}
 		
+		private long purpleTime;
+		
+		public long getPurpleTime() {
+			return purpleTime;
+		}
+		
+		public void setPurpleTime(long value) {
+			this.purpleTime = value;
+		}
+		
 		protected void clearEvents() {
 			start = false;
 			white = false;
+			blue = false;
+			purple = false;
 			black = false;
 		}
 	}
@@ -59,6 +83,7 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		main_region_Init,
 		main_region_Black,
 		main_region_White,
+		main_region_Purple,
 		$NullState$
 	};
 	
@@ -69,7 +94,7 @@ public class ExampleStatemachine implements IExampleStatemachine {
 	
 	private ITimer timer;
 	
-	private final boolean[] timeEvents = new boolean[2];
+	private final boolean[] timeEvents = new boolean[3];
 	public ExampleStatemachine() {
 		sCInterface = new SCInterfaceImpl();
 	}
@@ -87,6 +112,8 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		sCInterface.setWhiteTime(60);
 		
 		sCInterface.setBlackTime(60);
+		
+		sCInterface.setPurpleTime(60);
 	}
 	
 	public void enter() {
@@ -116,6 +143,9 @@ public class ExampleStatemachine implements IExampleStatemachine {
 				break;
 			case main_region_White:
 				main_region_White_react(true);
+				break;
+			case main_region_Purple:
+				main_region_Purple_react(true);
 				break;
 			default:
 				// $NullState$
@@ -170,6 +200,8 @@ public class ExampleStatemachine implements IExampleStatemachine {
 			return stateVector[0] == State.main_region_Black;
 		case main_region_White:
 			return stateVector[0] == State.main_region_White;
+		case main_region_Purple:
+			return stateVector[0] == State.main_region_Purple;
 		default:
 			return false;
 		}
@@ -211,6 +243,14 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		sCInterface.raiseWhite();
 	}
 	
+	public void raiseBlue() {
+		sCInterface.raiseBlue();
+	}
+	
+	public void raisePurple() {
+		sCInterface.raisePurple();
+	}
+	
 	public void raiseBlack() {
 		sCInterface.raiseBlack();
 	}
@@ -231,6 +271,14 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		sCInterface.setBlackTime(value);
 	}
 	
+	public long getPurpleTime() {
+		return sCInterface.getPurpleTime();
+	}
+	
+	public void setPurpleTime(long value) {
+		sCInterface.setPurpleTime(value);
+	}
+	
 	/* Entry action for state 'Black'. */
 	private void entryAction_main_region_Black() {
 		timer.setTimer(this, 0, (1 * 1000), false);
@@ -241,6 +289,11 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		timer.setTimer(this, 1, (1 * 1000), false);
 	}
 	
+	/* Entry action for state 'Purple'. */
+	private void entryAction_main_region_Purple() {
+		timer.setTimer(this, 2, (1 * 1000), false);
+	}
+	
 	/* Exit action for state 'Black'. */
 	private void exitAction_main_region_Black() {
 		timer.unsetTimer(this, 0);
@@ -249,6 +302,11 @@ public class ExampleStatemachine implements IExampleStatemachine {
 	/* Exit action for state 'White'. */
 	private void exitAction_main_region_White() {
 		timer.unsetTimer(this, 1);
+	}
+	
+	/* Exit action for state 'Purple'. */
+	private void exitAction_main_region_Purple() {
+		timer.unsetTimer(this, 2);
 	}
 	
 	/* 'default' enter sequence for state Init */
@@ -269,6 +327,13 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		entryAction_main_region_White();
 		nextStateIndex = 0;
 		stateVector[0] = State.main_region_White;
+	}
+	
+	/* 'default' enter sequence for state Purple */
+	private void enterSequence_main_region_Purple_default() {
+		entryAction_main_region_Purple();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Purple;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -298,6 +363,14 @@ public class ExampleStatemachine implements IExampleStatemachine {
 		exitAction_main_region_White();
 	}
 	
+	/* Default exit sequence for state Purple */
+	private void exitSequence_main_region_Purple() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_region_Purple();
+	}
+	
 	/* Default exit sequence for region main region */
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
@@ -309,6 +382,9 @@ public class ExampleStatemachine implements IExampleStatemachine {
 			break;
 		case main_region_White:
 			exitSequence_main_region_White();
+			break;
+		case main_region_Purple:
+			exitSequence_main_region_Purple();
 			break;
 		default:
 			break;
@@ -355,7 +431,12 @@ public class ExampleStatemachine implements IExampleStatemachine {
 						
 						enterSequence_main_region_Black_default();
 					} else {
-						did_transition = false;
+						if (sCInterface.blue) {
+							exitSequence_main_region_Black();
+							enterSequence_main_region_Purple_default();
+						} else {
+							did_transition = false;
+						}
 					}
 				}
 			}
@@ -377,6 +458,29 @@ public class ExampleStatemachine implements IExampleStatemachine {
 						sCInterface.setWhiteTime(sCInterface.getWhiteTime() - 1);
 						
 						enterSequence_main_region_White_default();
+					} else {
+						did_transition = false;
+					}
+				}
+			}
+		}
+		return did_transition;
+	}
+	
+	private boolean main_region_Purple_react(boolean try_transition) {
+		boolean did_transition = try_transition;
+		
+		if (try_transition) {
+			if (react()==false) {
+				if (sCInterface.purple) {
+					exitSequence_main_region_Purple();
+					enterSequence_main_region_Black_default();
+				} else {
+					if (timeEvents[2]) {
+						exitSequence_main_region_Purple();
+						sCInterface.setPurpleTime(sCInterface.getPurpleTime() - 1);
+						
+						enterSequence_main_region_Purple_default();
 					} else {
 						did_transition = false;
 					}
