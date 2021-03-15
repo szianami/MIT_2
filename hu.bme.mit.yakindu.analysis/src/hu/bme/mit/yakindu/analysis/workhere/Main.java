@@ -5,6 +5,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.junit.Test;
 import org.yakindu.sct.model.sgraph.State;
 import org.yakindu.sct.model.sgraph.Statechart;
+import org.yakindu.sct.model.sgraph.Transition;
 
 import hu.bme.mit.model2gml.Model2GML;
 import hu.bme.mit.yakindu.analysis.modelmanager.ModelManager;
@@ -25,11 +26,29 @@ public class Main {
 		// Reading model
 		Statechart s = (Statechart) root;
 		TreeIterator<EObject> iterator = s.eAllContents();
+		int nameSuggestion = 1;
 		while (iterator.hasNext()) {
 			EObject content = iterator.next();
 			if(content instanceof State) {
 				State state = (State) content;
-				System.out.println(state.getName());
+				
+				// 2.3) a kiinduló állapot tranzícióinak bejárásával a  célállapotok kiírása
+				for (Transition t: state.getOutgoingTransitions()) {
+					State outgoing = (State) t.getTarget();
+					System.out.println(state.getName()+" -> "+outgoing.getName());
+				}
+				
+				// 2.4) kimenő él nélküli állapotok kiírása
+				if (state.getOutgoingTransitions().isEmpty()) {
+					System.out.println("'"+state.getName()+"' - csapdaállapot ");
+				}
+				
+				// 2.5) név nélküli állapotok névjavaslata
+				if (state.getName().isEmpty()) {
+					state.setName("State_"+nameSuggestion);
+					System.out.println("név nélküli állapot átnevezve: '"+state.getName()+"'");
+					nameSuggestion++;
+				}
 			}
 		}
 		
